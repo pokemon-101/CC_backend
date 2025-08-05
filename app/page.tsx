@@ -1,11 +1,15 @@
 'use client'
 
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
 import { Music, Users, Zap, Shield, Menu, X } from 'lucide-react'
 
 export default function HomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const features = [
     {
@@ -81,11 +85,7 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
+          <div className={`transition-all duration-1000 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
               Connect Your{' '}
               <span className="gradient-text">Music</span>
@@ -102,7 +102,7 @@ export default function HomePage() {
                 Watch Demo
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -120,13 +120,12 @@ export default function HomePage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <motion.div
+              <div
                 key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glass rounded-2xl p-6 text-center hover:scale-105 transition-transform duration-300"
+                className={`glass rounded-2xl p-6 text-center hover:scale-105 transition-all duration-500 ${
+                  mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: `${index * 100}ms` }}
               >
                 <div className="w-16 h-16 bg-primary-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <feature.icon className="w-8 h-8 text-white" />
@@ -137,7 +136,7 @@ export default function HomePage() {
                 <p className="text-gray-300">
                   {feature.description}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
@@ -146,7 +145,9 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="glass rounded-3xl p-12">
+          <div className={`glass rounded-3xl p-12 transition-all duration-1000 ${
+            mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+          }`}>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
               Ready to Connect?
             </h2>
