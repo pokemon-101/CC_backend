@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.models.user import User, MusicAccount
 from app.schemas.user import UserCreate, UserLogin, Token, UserResponse
 from app.services.spotify import SpotifyService
-from app.services.apple_music import AppleMusicService
+# Apple Music service removed - focusing on Spotify only
 
 router = APIRouter()
 security = HTTPBearer()
@@ -218,104 +218,8 @@ async def spotify_callback(
             detail=f"Failed to connect Spotify account: {str(e)}"
         )
 
-@router.get("/apple-music/login")
-async def apple_music_login(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
-    try:
-        # Verify user is authenticated
-        user_id = verify_token(credentials.credentials)
-        user = db.query(User).filter(User.id == int(user_id)).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        apple_service = AppleMusicService()
-        
-        # Generate developer token for the frontend to use
-        developer_token = apple_service.generate_developer_token()
-        
-        return {
-            "developer_token": developer_token,
-            "team_id": apple_service.team_id,
-            "message": "Use MusicKit JS on frontend to get user token"
-        }
-        
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Apple Music configuration error: {str(e)}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to generate Apple Music developer token"
-        )
-
-@router.post("/apple-music/callback")
-async def apple_music_callback(
-    user_token: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    try:
-        user_id = verify_token(credentials.credentials)
-        user = db.query(User).filter(User.id == int(user_id)).first()
-        
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found"
-            )
-        
-        apple_service = AppleMusicService()
-        
-        # Validate the user token
-        if not apple_service.validate_user_token(user_token):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid Apple Music user token"
-            )
-        
-        # Get user info
-        user_info = await apple_service.get_user_info(user_token)
-        storefront_data = user_info.get("data", [{}])[0]
-        storefront_id = storefront_data.get("id", "us")
-        
-        # Save or update Apple Music account
-        existing_account = db.query(MusicAccount).filter(
-            MusicAccount.user_id == user.id,
-            MusicAccount.platform == "apple_music"
-        ).first()
-        
-        if existing_account:
-            existing_account.access_token = user_token
-            existing_account.platform_data = user_info
-            existing_account.is_active = True
-        else:
-            music_account = MusicAccount(
-                user_id=user.id,
-                platform="apple_music",
-                platform_user_id=storefront_id,
-                access_token=user_token,
-                platform_data=user_info,
-                is_active=True
-            )
-            db.add(music_account)
-        
-        db.commit()
-        
-        return {
-            "message": "Apple Music account connected successfully",
-            "storefront": storefront_id
-        }
-        
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to connect Apple Music account: {str(e)}"
-        )
+# Apple Music endpoints removed - focusing on Spotify integration only
+# Apple Music can be added back in the future when budget allows
 
 @router.post("/logout")
 async def logout(credentials: HTTPAuthorizationCredentials = Depends(security)):

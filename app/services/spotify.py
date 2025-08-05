@@ -14,12 +14,18 @@ class SpotifyService:
         self.auth_url = "https://accounts.spotify.com/authorize"
         self.token_url = "https://accounts.spotify.com/api/token"
         
-        # Validate credentials
-        if not all([self.client_id, self.client_secret, self.redirect_uri]):
-            raise ValueError("Spotify credentials not properly configured")
+        # Check if in demo mode (credentials not configured)
+        self.demo_mode = not all([self.client_id, self.client_secret, self.redirect_uri])
+        
+        if self.demo_mode:
+            print("🎧 Spotify running in DEMO MODE - configure real credentials for production")
     
     def get_auth_url(self, state: Optional[str] = None) -> str:
         """Generate Spotify authorization URL"""
+        if self.demo_mode:
+            # Return a demo URL that shows setup instructions
+            return f"http://localhost:3001/demo/spotify-setup?state={state}&demo=true"
+        
         scopes = [
             "user-read-private",
             "user-read-email", 
@@ -48,6 +54,15 @@ class SpotifyService:
     
     async def get_access_token(self, code: str) -> Dict[str, Any]:
         """Exchange authorization code for access token"""
+        if self.demo_mode:
+            return {
+                "access_token": "demo_access_token",
+                "token_type": "Bearer",
+                "expires_in": 3600,
+                "refresh_token": "demo_refresh_token",
+                "scope": "user-read-private user-read-email"
+            }
+        
         auth_header = base64.b64encode(f"{self.client_id}:{self.client_secret}".encode()).decode()
         
         headers = {
@@ -87,6 +102,16 @@ class SpotifyService:
     
     async def get_user_info(self, access_token: str) -> Dict[str, Any]:
         """Get user profile information"""
+        if self.demo_mode or access_token == "demo_access_token":
+            return {
+                "id": "demo_user_123",
+                "display_name": "Demo User",
+                "email": "demo@example.com",
+                "followers": {"total": 42},
+                "country": "US",
+                "images": [{"url": "https://via.placeholder.com/150"}]
+            }
+        
         headers = {"Authorization": f"Bearer {access_token}"}
         
         response = requests.get(f"{self.base_url}/me", headers=headers)

@@ -10,10 +10,25 @@ class AppleMusicService:
     def __init__(self):
         self.team_id = settings.APPLE_MUSIC_TEAM_ID
         self.key_id = settings.APPLE_MUSIC_KEY_ID
-        self.private_key = self._load_private_key()
         self.base_url = "https://api.music.apple.com/v1"
         self._developer_token = None
         self._token_expires_at = None
+        self._is_configured = False
+        
+        # Check if in demo mode
+        self.demo_mode = not all([self.team_id, self.key_id])
+        
+        if self.demo_mode:
+            print("🍎 Apple Music running in DEMO MODE - configure real credentials for production")
+            self.private_key = None
+        else:
+            try:
+                self.private_key = self._load_private_key()
+                self._is_configured = True
+            except ValueError as e:
+                print(f"⚠️  Apple Music not configured: {e}")
+                self.private_key = None
+                self.demo_mode = True
     
     def _load_private_key(self) -> str:
         """Load private key from settings or file"""
@@ -28,8 +43,18 @@ class AppleMusicService:
         
         raise ValueError("Apple Music private key not found in settings or file")
     
+    def is_configured(self) -> bool:
+        """Check if Apple Music is properly configured"""
+        return not self.demo_mode and self._is_configured and bool(self.team_id and self.key_id and self.private_key)
+    
     def generate_developer_token(self) -> str:
         """Generate Apple Music developer token with caching"""
+        if self.demo_mode:
+            return "demo_developer_token_for_musickit_js"
+        
+        if not self.is_configured():
+            raise ValueError("Apple Music is not configured. Please set APPLE_MUSIC_TEAM_ID, APPLE_MUSIC_KEY_ID, and APPLE_MUSIC_PRIVATE_KEY in your .env file.")
+        
         # Return cached token if still valid
         if (self._developer_token and self._token_expires_at and 
             datetime.utcnow() < self._token_expires_at - timedelta(minutes=5)):
@@ -225,6 +250,9 @@ class AppleMusicService:
     
     def validate_user_token(self, user_token: str) -> bool:
         """Validate Apple Music user token"""
+        if self.demo_mode:
+            return user_token == "demo_user_token"
+        
         try:
             developer_token = self.generate_developer_token()
             

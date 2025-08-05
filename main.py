@@ -47,7 +47,11 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "healthy", "timestamp": "2025-08-05T09:57:00Z"}
+
+@app.get("/api/v1/health")
+async def api_health_check():
+    return {"status": "healthy", "api_version": "v1", "timestamp": "2025-08-05T09:57:00Z"}
 
 if __name__ == "__main__":
     uvicorn.run(
